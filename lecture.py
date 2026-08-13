@@ -28,3 +28,5 @@ for row in sheet.iter_rows(values_only=True):
     print(resultat)
 
 ## pip3 install openpyxl
+
+    ## 05eae13efb8bbcc1d45c9afcb3d7ee4295495f299c809314a277db5d731d77fd
