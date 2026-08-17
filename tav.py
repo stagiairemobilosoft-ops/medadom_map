@@ -35,5 +35,5 @@ for jour in place.get("hours", []):
     for nom_jour, horaires in jour.items():
         print(f"{nom_jour.capitalize():10} : {horaires}")
 
-### export SERPAPI_KEY="ta_clé"
-### python3 -c 'import os; print(bool(os.getenv("SERPAPI_KEY")))'
+### export SERPAPI_KEY="d11c47f00e240ca47701a0137b10507376cd27bde3ea66c2e0d3951fb841424d"
+### python3 -c 'import os; print(bool(os.getenv("SERPAPI_KEY")))' 
