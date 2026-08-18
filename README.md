@@ -13,8 +13,8 @@ avec plan Free 250 recherche/mois sur API google
 - serpapi
 
 # Evironnement 
-export SERPAPI_KEY="clé_API"
-python3 -c 'import os; print(bool(os.getenv("SERPAPI_KEY")))'
+- export SERPAPI_KEY="clé_API"
+- python3 -c 'import os; print(bool(os.getenv("SERPAPI_KEY")))'
 
 # Run script
 python3 main.py
