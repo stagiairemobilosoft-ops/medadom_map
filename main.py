@@ -7,21 +7,14 @@ import openpyxl
 import serpapi
 from openpyxl.styles import Alignment
 
-
+# 1. Excel
 # ============================================================
-# 1. CONFIGURATION
-# ============================================================
-
 FICHIER_ENTREE = "pharma.xlsx"
 FICHIER_SORTIE = "pharma_resultats.xlsx"
-
 SEUIL_SCORE_TROUVE = 0.50
 
-
+# 2. Config SerpAPI
 # ============================================================
-# 2. CONFIGURATION SERPAPI
-# ============================================================
-
 api_key = os.getenv("SERPAPI_KEY")
 
 if not api_key:
@@ -31,11 +24,8 @@ client = serpapi.Client(
     api_key=api_key
 )
 
-
+# 3. Normalisation
 # ============================================================
-# 3. NORMALISATION
-# ============================================================
-
 def normaliser(texte):
 
     if not texte:
@@ -73,14 +63,10 @@ def normaliser(texte):
         " ",
         texte
     )
-
     return texte.strip()
 
-
+# 4. Requête
 # ============================================================
-# 4. CONSTRUIRE LA REQUÊTE
-# ============================================================
-
 def construire_query(
     location,
     adresse,
@@ -110,11 +96,8 @@ def construire_query(
 
     return " ".join(elements_valides)
 
-
+# 5. Formatage des horaires
 # ============================================================
-# 5. FORMATER LES HORAIRES
-# ============================================================
-
 def formater_horaires(horaires):
 
     if not horaires:
@@ -155,10 +138,8 @@ def formater_horaires(horaires):
     return str(horaires).strip()
 
 
+# 6. Get Horaire
 # ============================================================
-# 6. EXTRAIRE LES HORAIRES
-# ============================================================
-
 def extraire_horaires(hours):
 
     horaires = {
@@ -219,11 +200,8 @@ def extraire_horaires(hours):
 
     return horaires
 
-
+# 7. RECHERCHE - LOCATION
 # ============================================================
-# 7. RECHERCHER UN ÉTABLISSEMENT
-# ============================================================
-
 def rechercher_etablissement(
     location,
     adresse,
@@ -247,10 +225,8 @@ def rechercher_etablissement(
 
     print(query)
 
+    # Erreur de query
     # --------------------------------------------------------
-    # Aucune donnée pour effectuer la recherche
-    # --------------------------------------------------------
-
     if not query:
 
         print("🔴 Aucune donnée pour effectuer la recherche")
@@ -272,10 +248,8 @@ def rechercher_etablissement(
             "dimanche": ""
         }
 
-    # --------------------------------------------------------
     # Recherche Google Maps
     # --------------------------------------------------------
-
     try:
 
         results = client.search({
@@ -313,10 +287,8 @@ def rechercher_etablissement(
             "dimanche": ""
         }
 
+    # Récupération de la fiche google
     # --------------------------------------------------------
-    # Récupération de la fiche
-    # --------------------------------------------------------
-
     place = results.get(
         "place_results",
         {}
@@ -345,10 +317,8 @@ def rechercher_etablissement(
             "dimanche": ""
         }
 
-    # --------------------------------------------------------
     # Données Google
     # --------------------------------------------------------
-
     nom_google = place.get(
         "title",
         ""
@@ -387,7 +357,7 @@ def rechercher_etablissement(
         telephone_google
     )
 
-    # ========================================================
+    # SCORE  RECHERCHE
     # COMPARAISON DU NOM
     # ========================================================
 
@@ -414,7 +384,6 @@ def rechercher_etablissement(
     # ========================================================
     # COMPARAISON DE L'ADRESSE
     # ========================================================
-
     adresse_source = normaliser(
         adresse
     )
@@ -441,7 +410,6 @@ def rechercher_etablissement(
     # ========================================================
     # CODE POSTAL
     # ========================================================
-
     if code_postal:
 
         code_postal_normalise = normaliser(
@@ -469,7 +437,6 @@ def rechercher_etablissement(
     # ========================================================
     # VILLE
     # ========================================================
-
     if ville:
 
         ville_normalisee = normaliser(
@@ -497,7 +464,6 @@ def rechercher_etablissement(
     # ========================================================
     # SCORE GLOBAL
     # ========================================================
-
     score_global = (
 
         similarite_nom * 0.50
@@ -546,7 +512,6 @@ def rechercher_etablissement(
     # ========================================================
     # DÉTERMINATION DU STATUT
     # ========================================================
-
     if score_global > SEUIL_SCORE_TROUVE:
 
         statut = "trouvé"
@@ -566,7 +531,6 @@ def rechercher_etablissement(
     # ========================================================
     # HORAIRES
     # ========================================================
-
     horaires = extraire_horaires(
         horaires_google
     )
@@ -574,7 +538,6 @@ def rechercher_etablissement(
     # ========================================================
     # RETOUR
     # ========================================================
-
     return {
 
         "recherche": statut,
@@ -594,11 +557,8 @@ def rechercher_etablissement(
         "dimanche": horaires["dimanche"]
     }
 
-
+# 8. Lecture des query sur excel
 # ============================================================
-# 8. LECTURE DU FICHIER EXCEL
-# ============================================================
-
 print("\n")
 print("=" * 60)
 print("LECTURE DU FICHIER")
@@ -616,10 +576,8 @@ classeur = openpyxl.load_workbook(
 feuille = classeur.active
 
 
+# 9. Colonne de query
 # ============================================================
-# 9. RÉCUPÉRATION DES COLONNES
-# ============================================================
-
 headers = {}
 
 for cellule in feuille[1]:
@@ -653,11 +611,8 @@ for colonne in colonnes_obligatoires:
             f"{colonne}"
         )
 
-
+# 10. Génération des résultats
 # ============================================================
-# 10. CRÉATION DU FICHIER DE SORTIE
-# ============================================================
-
 classeur_sortie = openpyxl.Workbook()
 
 feuille_sortie = (
@@ -667,10 +622,8 @@ feuille_sortie = (
 feuille_sortie.title = "Résultats"
 
 
+# 11. Colones en plus du fichers de résultats
 # ============================================================
-# 11. COLONNES DU FICHIER DE SORTIE
-# ============================================================
-
 colonnes_sortie = [
 
     "location",
@@ -699,11 +652,8 @@ feuille_sortie.append(
     colonnes_sortie
 )
 
-
+# 12. Formes des entêtes
 # ============================================================
-# 12. FORMATAGE DES EN-TÊTES
-# ============================================================
-
 for cellule in feuille_sortie[1]:
 
     cellule.alignment = Alignment(
@@ -712,11 +662,8 @@ for cellule in feuille_sortie[1]:
         wrap_text=True
     )
 
-
+# 13. traitement des lignes
 # ============================================================
-# 13. TRAITEMENT DES LIGNES
-# ============================================================
-
 nombre_total = 0
 nombre_trouve = 0
 nombre_probable = 0
@@ -962,11 +909,8 @@ for numero_ligne in range(
         16
     ).number_format = "0%"
 
-
+# 14. Formes de largeur des cellules
 # ============================================================
-# 14. LARGEUR DES COLONNES
-# ============================================================
-
 largeurs = {
 
     "A": 30,
@@ -997,11 +941,8 @@ for colonne, largeur in largeurs.items():
         colonne
     ].width = largeur
 
-
+# 15. Formes de hauteurs des lignes
 # ============================================================
-# 15. HAUTEUR DES LIGNES
-# ============================================================
-
 for numero_ligne in range(
     2,
     feuille_sortie.max_row + 1
@@ -1011,18 +952,13 @@ for numero_ligne in range(
         numero_ligne
     ].height = 40
 
-
+# 16. Sauvegarde
 # ============================================================
-# 16. SAUVEGARDE
-# ============================================================
-
 classeur_sortie.save(
     FICHIER_SORTIE
 )
 
-
-# ============================================================
-# 17. RÉSUMÉ FINAL
+# 17. Résumé des lignes trtaitées par le script
 # ============================================================
 
 print("\n")
