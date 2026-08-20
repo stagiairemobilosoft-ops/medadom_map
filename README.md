@@ -12,8 +12,12 @@ avec plan Free 250 recherche/mois sur API google
 - openpyxl 
 - serpapi
 
+python3 -m pip install openpyxl google-search-results
+python3 -m pip install --upgrade serpapi
+
+
 # Evironnement 
-export SERPAPI_KEY="clé_API"
+export SERPAPI_KEY="6e038b1f657ae646e851d81d1931a8bcfbe53f7ba387a6f199778148a4c882ea"
 python3 -c 'import os; print(bool(os.getenv("SERPAPI_KEY")))'
 
 # Run script

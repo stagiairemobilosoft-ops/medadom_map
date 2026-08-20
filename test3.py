@@ -109,6 +109,15 @@ def formater_horaires(horaires):
     if not horaires:
         return ""
 
+    # Cas où SerpApi retourne :
+    #
+    # 09:00–12:30, 15:00–19:00
+    #
+    # On transforme en :
+    #
+    # 09:00–12:30
+    # 15:00–19:00
+
     if isinstance(horaires, str):
 
         horaires = horaires.replace(
@@ -123,6 +132,7 @@ def formater_horaires(horaires):
 
         return horaires.strip()
 
+    # Si jamais SerpApi retourne une liste
     if isinstance(horaires, list):
 
         return "\n".join(
@@ -197,161 +207,22 @@ def extraire_horaires(hours):
     return horaires
 
 
-# 7. RÉCUPÉRATION DES DÉTAILS DE LA FICHE
+# 7. RECHERCHE PHOTOS GOOGLE
 # ============================================================
-def recuperer_details_fiche(data_id):
+def rechercher_photos(data_id):
 
-    details = {
-
-        "description": "",
-        "site_web": "",
-        "nombre_photos": 0,
-        "nombre_photos_proprietaire": 0
-    }
+    nombre_photos = 0
+    nombre_photos_proprietaire = 0
 
     if not data_id:
 
-        print(
-            "⚠️ Aucun data_id disponible"
+        return (
+            nombre_photos,
+            nombre_photos_proprietaire
         )
-
-        return details
-
 
     # ========================================================
-    # RECHERCHE DÉTAILLÉE DE LA FICHE
-    # ========================================================
-
-    try:
-
-        print(
-            "\n🔎 Recherche détaillée de la fiche..."
-        )
-
-        details_result = client.search({
-
-            "engine": "google_maps",
-
-            "type": "search",
-
-            "data_id": data_id,
-
-            "google_domain": "google.fr",
-
-            "hl": "fr"
-        })
-
-
-        # ----------------------------------------------------
-        # Affichage des clés disponibles
-        # ----------------------------------------------------
-
-        print(
-            "Clés reçues :",
-            list(details_result.keys())
-        )
-
-
-        # ----------------------------------------------------
-        # Récupération de place_results
-        # ----------------------------------------------------
-
-        place_detail = details_result.get(
-            "place_results",
-            {}
-        )
-
-
-        if not isinstance(
-            place_detail,
-            dict
-        ):
-
-            place_detail = {}
-
-
-        # ----------------------------------------------------
-        # DESCRIPTION
-        # ----------------------------------------------------
-
-        description = place_detail.get(
-            "description",
-            ""
-        )
-
-        if not description:
-
-            description = place_detail.get(
-                "about",
-                ""
-            )
-
-        if isinstance(
-            description,
-            dict
-        ):
-
-            description = (
-                description.get(
-                    "text",
-                    ""
-                )
-            )
-
-
-        details["description"] = (
-            str(description).strip()
-            if description
-            else ""
-        )
-
-
-        # ----------------------------------------------------
-        # SITE WEB
-        # ----------------------------------------------------
-
-        website = place_detail.get(
-            "website",
-            ""
-        )
-
-        if not website:
-
-            website = place_detail.get(
-                "website_url",
-                ""
-            )
-
-
-        details["site_web"] = (
-            str(website).strip()
-            if website
-            else ""
-        )
-
-
-        print(
-            "Description trouvée :",
-            bool(details["description"])
-        )
-
-        print(
-            "Site web trouvé :",
-            details["site_web"]
-        )
-
-
-    except Exception as e:
-
-        print(
-            "\n⚠️ ERREUR DÉTAILS FICHE"
-        )
-
-        print(e)
-
-
-    # ========================================================
-    # PHOTOS GOOGLE
+    # TOUTES LES PHOTOS
     # ========================================================
 
     try:
@@ -369,37 +240,32 @@ def recuperer_details_fiche(data_id):
             "hl": "fr"
         })
 
-
         photos = resultat_photos.get(
             "photos",
             []
         )
-
 
         if isinstance(
             photos,
             list
         ):
 
-            details["nombre_photos"] = len(
+            nombre_photos = len(
                 photos
             )
 
-
         print(
-            "Nombre de photos :",
-            details["nombre_photos"]
+            "Nombre de photos récupérées :",
+            nombre_photos
         )
-
 
     except Exception as e:
 
         print(
-            "⚠️ Erreur photos :"
+            "⚠️ Erreur récupération photos :"
         )
 
         print(e)
-
 
     # ========================================================
     # PHOTOS DU PROPRIÉTAIRE
@@ -408,8 +274,15 @@ def recuperer_details_fiche(data_id):
     try:
 
         print(
-            "\n👤 Recherche des photos propriétaire..."
+            "👤 Recherche des photos propriétaire..."
         )
+
+        # ID de la catégorie "By owner"
+        #
+        # SerpApi retourne cette catégorie dans
+        # Google Maps Photos.
+        #
+        # "By owner" = CgIgARICEAE
 
         resultat_proprietaire = client.search({
 
@@ -422,7 +295,6 @@ def recuperer_details_fiche(data_id):
             "hl": "fr"
         })
 
-
         photos_proprietaire = (
             resultat_proprietaire.get(
                 "photos",
@@ -430,37 +302,32 @@ def recuperer_details_fiche(data_id):
             )
         )
 
-
         if isinstance(
             photos_proprietaire,
             list
         ):
 
-            details[
-                "nombre_photos_proprietaire"
-            ] = len(
+            nombre_photos_proprietaire = len(
                 photos_proprietaire
             )
 
-
         print(
             "Nombre de photos propriétaire :",
-            details[
-                "nombre_photos_proprietaire"
-            ]
+            nombre_photos_proprietaire
         )
-
 
     except Exception as e:
 
         print(
-            "⚠️ Erreur photos propriétaire :"
+            "⚠️ Erreur récupération photos propriétaire :"
         )
 
         print(e)
 
-
-    return details
+    return (
+        nombre_photos,
+        nombre_photos_proprietaire
+    )
 
 
 # 8. RECHERCHE - LOCATION
@@ -488,10 +355,8 @@ def rechercher_etablissement(
 
     print(query)
 
-
     # Erreur de query
     # --------------------------------------------------------
-
     if not query:
 
         print(
@@ -524,10 +389,8 @@ def rechercher_etablissement(
             "dimanche": ""
         }
 
-
     # Recherche Google Maps
     # --------------------------------------------------------
-
     try:
 
         results = client.search({
@@ -543,11 +406,9 @@ def rechercher_etablissement(
             "hl": "fr"
         })
 
-
     except Exception as e:
 
         print("\n🔴 ERREUR SERPAPI")
-
         print(e)
 
         return {
@@ -576,15 +437,12 @@ def rechercher_etablissement(
             "dimanche": ""
         }
 
-
-    # Récupération de la fiche Google
+    # Récupération de la fiche google
     # --------------------------------------------------------
-
     place = results.get(
         "place_results",
         {}
     )
-
 
     if not place:
 
@@ -618,7 +476,6 @@ def rechercher_etablissement(
             "dimanche": ""
         }
 
-
     # Données Google
     # --------------------------------------------------------
 
@@ -644,69 +501,18 @@ def rechercher_etablissement(
 
 
     # ========================================================
-    # DATA ID
+    # SITE WEB + DESCRIPTION
     # ========================================================
 
-    data_id = place.get(
-        "data_id",
+    description_google = place.get(
+        "description",
         ""
     )
 
-
-    print(
-        "\nDATA ID :",
-        data_id
+    site_web_google = place.get(
+        "website",
+        ""
     )
-
-
-    # ========================================================
-    # DESCRIPTION + SITE WEB + PHOTOS
-    # ========================================================
-
-    details = recuperer_details_fiche(
-        data_id
-    )
-
-
-    description_google = details[
-        "description"
-    ]
-
-    site_web_google = details[
-        "site_web"
-    ]
-
-    nombre_photos = details[
-        "nombre_photos"
-    ]
-
-    nombre_photos_proprietaire = details[
-        "nombre_photos_proprietaire"
-    ]
-
-
-    # ========================================================
-    # FALLBACK DESCRIPTION
-    # ========================================================
-
-    if not description_google:
-
-        description_google = place.get(
-            "description",
-            ""
-        )
-
-
-    # ========================================================
-    # FALLBACK SITE WEB
-    # ========================================================
-
-    if not site_web_google:
-
-        site_web_google = place.get(
-            "website",
-            ""
-        )
 
 
     # ========================================================
@@ -721,6 +527,28 @@ def rechercher_etablissement(
     nombre_avis_google = place.get(
         "reviews",
         0
+    )
+
+
+    # ========================================================
+    # DATA ID POUR LES PHOTOS
+    # ========================================================
+
+    data_id = place.get(
+        "data_id",
+        ""
+    )
+
+
+    # ========================================================
+    # PHOTOS
+    # ========================================================
+
+    (
+        nombre_photos,
+        nombre_photos_proprietaire
+    ) = rechercher_photos(
+        data_id
     )
 
 
@@ -768,7 +596,7 @@ def rechercher_etablissement(
     )
 
     print(
-        "Nombre photos propriétaire :",
+        "Photos propriétaire :",
         nombre_photos_proprietaire
     )
 
@@ -784,7 +612,6 @@ def rechercher_etablissement(
     nom_google_normalise = normaliser(
         nom_google
     )
-
 
     if nom_source and nom_google_normalise:
 
@@ -811,7 +638,6 @@ def rechercher_etablissement(
         adresse_google
     )
 
-
     if adresse_source and adresse_google_normalisee:
 
         similarite_adresse = SequenceMatcher(
@@ -821,6 +647,9 @@ def rechercher_etablissement(
         ).ratio()
 
     else:
+
+        # Adresse absente :
+        # on ne pénalise pas le score.
 
         similarite_adresse = 1.0
 
@@ -848,6 +677,9 @@ def rechercher_etablissement(
 
     else:
 
+        # Code postal absent :
+        # on ne pénalise pas le score.
+
         score_code_postal = 1.0
 
 
@@ -873,6 +705,9 @@ def rechercher_etablissement(
         )
 
     else:
+
+        # Ville absente :
+        # on ne pénalise pas le score.
 
         score_ville = 1.0
 
@@ -944,7 +779,6 @@ def rechercher_etablissement(
 
         statut = "non trouvé"
 
-
     print(
         f"RÉSULTAT             : {statut}"
     )
@@ -996,7 +830,7 @@ def rechercher_etablissement(
     }
 
 
-# 9. Lecture du fichier Excel
+# 9. Lecture des query sur excel
 # ============================================================
 
 print("\n")
@@ -1066,7 +900,7 @@ feuille_sortie = (
 feuille_sortie.title = "Résultats"
 
 
-# 12. Colonnes du fichier de résultats
+# 12. Colonnes en plus du fichier de résultats
 # ============================================================
 
 colonnes_sortie = [
@@ -1120,7 +954,8 @@ for cellule in feuille_sortie[1]:
     )
 
 
-# 14. Colonne score automatique
+# ============================================================
+# 14. NUMÉRO AUTOMATIQUE DE LA COLONNE SCORE
 # ============================================================
 
 COLONNE_SCORE = (
@@ -1129,7 +964,7 @@ COLONNE_SCORE = (
 )
 
 
-# 15. Traitement des lignes
+# 15. traitement des lignes
 # ============================================================
 
 nombre_total = 0
@@ -1157,7 +992,6 @@ for numero_ligne in range(
         f"LIGNE {numero_ligne}",
         "#" * 20
     )
-
 
     # --------------------------------------------------------
     # Lecture des données
@@ -1297,7 +1131,7 @@ for numero_ligne in range(
 
 
     # --------------------------------------------------------
-    # Ajouter toujours la ligne
+    # Ajouter TOUJOURS la ligne
     # --------------------------------------------------------
 
     if resultat is None:
@@ -1366,10 +1200,8 @@ for numero_ligne in range(
         resultat["adresse"],
         resultat["contact"],
 
-        # Description
+        # Description / site web
         resultat["description"],
-
-        # Site web
         resultat["site_web"],
 
         # Avis Google
@@ -1422,7 +1254,7 @@ for numero_ligne in range(
     ).number_format = "0%"
 
 
-# 16. Largeurs des cellules
+# 16. Formes de largeur des cellules
 # ============================================================
 
 largeurs = {
@@ -1466,7 +1298,7 @@ for colonne, largeur in largeurs.items():
     ].width = largeur
 
 
-# 17. Hauteurs des lignes
+# 17. Formes de hauteurs des lignes
 # ============================================================
 
 for numero_ligne in range(
@@ -1487,7 +1319,7 @@ classeur_sortie.save(
 )
 
 
-# 19. Résumé
+# 19. Résumé des lignes traitées par le script
 # ============================================================
 
 print("\n")
