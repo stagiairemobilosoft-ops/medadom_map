@@ -17,7 +17,7 @@ python3 -m pip install --upgrade serpapi
 
 
 # Evironnement 
-export SERPAPI_KEY="6e038b1f657ae646e851d81d1931a8bcfbe53f7ba387a6f199778148a4c882ea"
+export SERPAPI_KEY="clé_API"
 python3 -c 'import os; print(bool(os.getenv("SERPAPI_KEY")))'
 
 # Run script
